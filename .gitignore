@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.env
+
+# Dados e configuração internos (não publicar)
+Contas_ticket.json
+Contas_manutencao.json
+logica.txt
+*.xlsx
+*.pdf

@@ -1,0 +1,7 @@
+{
+  "servicos": {
+    "gasolina comum": {"servico": "GASOLINA COMUM", "conta_id": 4},
+    "etanol": {"servico": "ETANOL", "conta_id": 4},
+    "diesel": {"servico": "DIESEL", "conta_id": 5}
+  }
+}

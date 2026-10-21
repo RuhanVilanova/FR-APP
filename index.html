@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FR Frotas — Conciliação</title>
+  <link rel="icon" href="data:image/png;base64," />
+  <script>
+    // Gerar favicon dinamicamente via canvas
+    (function(){
+      var c=document.createElement('canvas');c.width=64;c.height=64;
+      var x=c.getContext('2d');
+      // Fundo arredondado
+      x.fillStyle='#1e3a5f';x.beginPath();x.roundRect(0,0,64,64,14);x.fill();
+      // Carroceria
+      x.fillStyle='#3b82f6';x.beginPath();x.roundRect(8,22,26,18,3);x.fill();
+      // Cabine
+      x.beginPath();x.moveTo(34,28);x.lineTo(34,40);x.lineTo(50,40);x.lineTo(50,34);x.lineTo(42,28);x.closePath();x.fill();
+      // Para-brisa
+      x.fillStyle='#93c5fd';x.globalAlpha=0.7;x.beginPath();x.moveTo(36,29);x.lineTo(41,29);x.lineTo(48,35);x.lineTo(36,35);x.closePath();x.fill();
+      x.globalAlpha=1;
+      // Rodas
+      x.fillStyle='#fff';x.beginPath();x.arc(20,42,5,0,Math.PI*2);x.fill();
+      x.beginPath();x.arc(44,42,5,0,Math.PI*2);x.fill();
+      x.fillStyle='#1e3a5f';x.beginPath();x.arc(20,42,2.5,0,Math.PI*2);x.fill();
+      x.beginPath();x.arc(44,42,2.5,0,Math.PI*2);x.fill();
+      // Texto FR
+      x.fillStyle='#fff';x.font='bold 13px sans-serif';x.textAlign='center';x.fillText('FR',21,36);
+      // Aplicar
+      var link=document.querySelector('link[rel="icon"]');
+      link.href=c.toDataURL('image/png');
+    })();
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { 50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8', 800: '#1e3a5f', 900: '#0f2440' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner { animation: spin 0.8s linear infinite; }
+    .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    .slide-up { animation: slideUp 0.3s ease-out forwards; }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+
+<body class="bg-gray-50 min-h-screen flex flex-col">
+
+  <!-- ====== HEADER ====== -->
+  <header class="bg-brand-800 text-white shadow-lg">
+    <div class="max-w-6xl mx-auto flex items-center justify-between px-6 py-4">
+      <div class="flex items-center gap-3">
+        <svg class="w-8 h-8 text-blue-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0H21M3.375 14.25h4.875c.621 0 1.125-.504 1.125-1.125v-4.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v4.5c0 .621.504 1.125 1.125 1.125Zm13.125-9.75a1.125 1.125 0 0 1 1.125 1.125v6.75a1.125 1.125 0 0 1-1.125 1.125H14.25a1.125 1.125 0 0 1-1.125-1.125v-6.75a1.125 1.125 0 0 1 1.125-1.125h2.25Z" />
+        </svg>
+        <div>
+          <h1 class="text-lg font-bold tracking-wide">FR Frotas</h1>
+          <p class="text-xs text-blue-200">Conciliação de Despesas</p>
+        </div>
+      </div>
+      <div class="relative">
+        <button id="btnMes" onclick="toggleDropdownMes()" class="bg-brand-600 hover:bg-brand-500 text-sm font-semibold px-3 py-1.5 rounded-full flex items-center gap-1.5 transition-colors cursor-pointer select-none">
+          <span id="badgeMes"></span>
+          <svg class="w-3 h-3 opacity-70" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
+        </button>
+        <div id="dropdownMes" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-200 py-1 z-50 max-h-72 overflow-y-auto">
+          <!-- preenchido via JS -->
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ====== CONTEÚDO PRINCIPAL ====== -->
+  <main class="flex-1 max-w-6xl w-full mx-auto px-6 py-8 flex flex-col gap-6">
+
+    <!-- Barra de ações do topo -->
+    <section class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div>
+        <h2 class="text-xl font-bold text-gray-800">Fornecedores</h2>
+        <p class="text-sm text-gray-500 mt-0.5">Selecione fornecedores ou execute todos de uma vez.</p>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <!-- Botão Enviar Arquivos -->
+        <button onclick="abrirModalUpload()" class="flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 font-semibold text-sm px-4 py-2.5 rounded-xl border border-gray-200 shadow-sm transition-all">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/></svg>
+          Enviar Arquivos
+        </button>
+        <!-- Botão Baixar Arquivos -->
+        <button onclick="abrirModalDownload()" class="flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 font-semibold text-sm px-4 py-2.5 rounded-xl border border-gray-200 shadow-sm transition-all">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M7.5 12l4.5 4.5m0 0 4.5-4.5M12 16.5V3"/></svg>
+          Baixar Arquivos
+        </button>
+        <!-- Indicador de status -->
+        <div id="statusBadge" class="flex items-center gap-2 text-sm font-medium px-4 py-1.5 rounded-full bg-gray-100 text-gray-500">
+          <span id="statusDot" class="w-2.5 h-2.5 rounded-full bg-gray-400"></span>
+          <span id="statusText">Aguardando</span>
+        </div>
+
+        <!-- Botão "Executar Todos" -->
+        <button
+          id="btnStart"
+          onclick="executarFornecedores([])"
+          class="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 active:scale-[0.97]
+                 text-white font-semibold text-sm px-5 py-2.5 rounded-xl shadow-md
+                 transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
+          </svg>
+          <span id="btnLabel">Executar Todos</span>
+          <svg id="btnSpinner" class="hidden spinner w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+          </svg>
+        </button>
+
+        <!-- Botão "Criar OC" -->
+        <button
+          id="btnCriarOC"
+          onclick="criarOC([])"
+          class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.97]
+                 text-white font-semibold text-sm px-5 py-2.5 rounded-xl shadow-md
+                 transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z" />
+          </svg>
+          <span id="btnOCLabel">Criar OC</span>
+          <svg id="btnOCSpinner" class="hidden spinner w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+          </svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- Barra de progresso -->
+    <div id="progressWrapper" class="hidden">
+      <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+        <div id="progressBar" class="h-2 rounded-full bg-brand-500 transition-all duration-500" style="width: 0%"></div>
+      </div>
+      <p id="progressLabel" class="text-xs text-gray-400 mt-1 text-center"></p>
+    </div>
+
+    <!-- ====== DATA GRID DE FORNECEDORES ====== -->
+    <section class="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
+      <!-- Cabeçalho da tabela -->
+      <div class="px-6 py-3 bg-gray-50 border-b border-gray-200 flex items-center gap-3">
+        <input type="checkbox" id="chkTodos" class="w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 cursor-pointer" />
+        <label for="chkTodos" class="text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer select-none">Selecionar Todos</label>
+        <span id="countSelecionados" class="ml-auto text-xs text-gray-400"></span>
+      </div>
+
+      <!-- Corpo da tabela (preenchido via JS) -->
+      <div id="tabelaFornecedores" class="divide-y divide-gray-100">
+        <div class="px-6 py-12 text-center text-gray-400 text-sm">Carregando fornecedores…</div>
+      </div>
+    </section>
+
+    <!-- ====== BARRA FLUTUANTE DE AÇÕES PARA SELECIONADOS ====== -->
+    <div id="floatingBar" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-40 slide-up">
+      <div class="bg-brand-800 text-white rounded-2xl shadow-2xl px-6 py-3 flex items-center gap-4">
+        <span id="floatingCount" class="text-sm font-medium"></span>
+        <button
+          onclick="executarSelecionados()"
+          class="flex items-center gap-2 bg-white text-brand-800 font-semibold text-sm px-4 py-2 rounded-xl
+                 hover:bg-brand-50 active:scale-[0.97] transition-all"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
+          </svg>
+          Executar Selecionados
+        </button>
+        <button
+          onclick="criarOCSelecionados()"
+          class="flex items-center gap-2 bg-emerald-500 text-white font-semibold text-sm px-4 py-2 rounded-xl
+                 hover:bg-emerald-600 active:scale-[0.97] transition-all"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z" />
+          </svg>
+          Criar OC
+        </button>
+        <button
+          onclick="limparSelecao()"
+          class="text-xs text-white/70 hover:text-white underline underline-offset-2 transition-colors"
+        >Limpar</button>
+      </div>
+    </div>
+
+    <!-- ====== ÁREA DE RESULTADOS (oculta até a execução) ====== -->
+    <section id="resultados" class="hidden w-full flex flex-col gap-6 fade-in">
+
+      <!-- Resumo geral -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-white rounded-xl shadow-sm border p-5 text-center">
+          <p class="text-3xl font-bold text-brand-700" id="totalFornecedores">0</p>
+          <p class="text-xs text-gray-400 mt-1">Fornecedores processados</p>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border p-5 text-center">
+          <p class="text-3xl font-bold text-green-600" id="totalArquivos">0</p>
+          <p class="text-xs text-gray-400 mt-1">Arquivos gerados</p>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border p-5 text-center">
+          <p class="text-3xl font-bold text-amber-500" id="totalAlertas">0</p>
+          <p class="text-xs text-gray-400 mt-1">Alertas encontrados</p>
+        </div>
+      </div>
+
+      <!-- Arquivos gerados -->
+      <details class="bg-white rounded-xl shadow-sm border" open>
+        <summary class="px-6 py-4 cursor-pointer font-semibold text-gray-700 flex items-center gap-2">
+          <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          Arquivos Gerados
+        </summary>
+        <div id="listaArquivos" class="px-6 pb-4 text-sm text-gray-600"></div>
+      </details>
+
+      <!-- Placas sem designação -->
+      <details class="bg-white rounded-xl shadow-sm border">
+        <summary class="px-6 py-4 cursor-pointer font-semibold text-gray-700 flex items-center gap-2">
+          <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"/></svg>
+          Placas sem Designação
+          <span id="countPlacas" class="ml-auto text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">0</span>
+        </summary>
+        <div id="tabelaPlacas" class="px-6 pb-4 overflow-x-auto text-sm"></div>
+      </details>
+
+      <!-- Tipos não mapeados -->
+      <details class="bg-white rounded-xl shadow-sm border">
+        <summary class="px-6 py-4 cursor-pointer font-semibold text-gray-700 flex items-center gap-2">
+          <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m0 3.75h.008v.008H12v-.008ZM21 12a9 9 0 11-18 0 9 9 0 0118 0Z"/></svg>
+          Tipos de Transação Não Mapeados
+          <span id="countTipos" class="ml-auto text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">0</span>
+        </summary>
+        <div id="tabelaTipos" class="px-6 pb-4 overflow-x-auto text-sm"></div>
+      </details>
+
+      <!-- Erros de processamento -->
+      <details id="secaoErros" class="hidden bg-white rounded-xl shadow-sm border border-red-200">
+        <summary class="px-6 py-4 cursor-pointer font-semibold text-red-600 flex items-center gap-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"/></svg>
+          Erros no Processamento
+        </summary>
+        <div id="listaErros" class="px-6 pb-4 text-sm text-red-600"></div>
+      </details>
+    </section>
+  </main>
+
+  <!-- ====== MODAL TICKET ====== -->
+  <div id="modalTicket" class="hidden fixed inset-0 z-50 bg-black/40 px-4">
+    <div class="min-h-full flex items-center justify-center py-8">
+      <div class="w-full max-w-2xl bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h2 class="text-xl font-bold text-gray-800">Mapeamento de conta do TICKET</h2>
+            <p class="text-sm text-gray-500 mt-1">
+              Escolha qual item de GASTO_CONTAS deve ser usado para este serviço.
+            </p>
+          </div>
+          <button
+            type="button"
+            onclick="fecharModalTicket()"
+            class="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+            aria-label="Fechar"
+          >&times;</button>
+        </div>
+
+        <div class="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <p class="text-xs uppercase tracking-wide text-amber-700 font-semibold">Serviço sem conta cadastrada</p>
+          <p id="ticketServicoPendente" class="mt-1 text-lg font-bold text-amber-800"></p>
+          <p class="mt-2 text-sm text-amber-700">
+            Ao salvar, o vínculo será gravado em <code class="bg-amber-100 px-1 rounded">Contas_ticket.json</code>.
+          </p>
+        </div>
+
+        <div class="mt-5">
+          <label for="ticketContaSelect" class="block text-sm font-semibold text-gray-700 mb-2">Selecione a conta</label>
+          <select id="ticketContaSelect" class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500"></select>
+        </div>
+
+        <div class="mt-6 flex justify-end gap-3">
+          <button
+            type="button"
+            onclick="fecharModalTicket()"
+            class="px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors"
+          >Fechar</button>
+          <button
+            type="button"
+            id="ticketSalvarBtn"
+            onclick="salvarContaTicketAtual()"
+            class="px-4 py-2 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          >Salvar conta</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== MODAL UPLOAD ====== -->
+  <div id="modalUpload" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col">
+      <!-- Header -->
+      <div class="px-6 py-4 border-b flex items-center justify-between">
+        <h3 class="text-lg font-bold text-gray-800">Enviar Arquivos</h3>
+        <button onclick="fecharModalUpload()" class="text-gray-400 hover:text-gray-600"><svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
+      </div>
+
+      <!-- Mês selector -->
+      <div class="px-6 pt-4 flex items-center gap-3">
+        <label class="text-sm font-medium text-gray-600">Mês:</label>
+        <select id="uploadMes" class="text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus:ring-brand-500 focus:border-brand-500"></select>
+      </div>
+
+      <!-- Tabs -->
+      <div class="px-6 pt-4 flex gap-1 border-b">
+        <button onclick="setUploadTab('pasta')" data-tab="pasta" class="upload-tab px-4 py-2 text-sm font-medium rounded-t-lg border-b-2 transition-colors">Enviar Pasta</button>
+        <button onclick="setUploadTab('designacao_mensal')" data-tab="designacao_mensal" class="upload-tab px-4 py-2 text-sm font-medium rounded-t-lg border-b-2 transition-colors">Designação Mensal</button>
+        <button onclick="setUploadTab('designacao_historica')" data-tab="designacao_historica" class="upload-tab px-4 py-2 text-sm font-medium rounded-t-lg border-b-2 transition-colors">Designação Histórica</button>
+      </div>
+
+      <!-- Body (scrollável) -->
+      <div class="px-6 py-4 flex-1 overflow-y-auto">
+        <!-- Descrição dinâmica -->
+        <p id="uploadDesc" class="text-sm text-gray-500 mb-4"></p>
+
+        <!-- Input de arquivos -->
+        <div id="uploadDropzone" class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer hover:border-brand-400 hover:bg-brand-50/30 transition-colors" onclick="document.getElementById('uploadInput').click()">
+          <svg class="w-10 h-10 mx-auto text-gray-300 mb-2" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/></svg>
+          <p class="text-sm text-gray-500">Clique ou arraste arquivos aqui</p>
+          <p id="uploadHint" class="text-xs text-gray-400 mt-1"></p>
+        </div>
+        <input type="file" id="uploadInput" class="hidden" multiple />
+
+        <!-- Preview dos arquivos -->
+        <div id="uploadPreview" class="hidden mt-4">
+          <h4 class="text-sm font-semibold text-gray-700 mb-2">Arquivos selecionados</h4>
+          <div id="uploadFileList" class="space-y-1 max-h-40 overflow-y-auto"></div>
+          <p id="uploadFileCount" class="text-xs text-gray-400 mt-2"></p>
+        </div>
+
+        <!-- Resultados da validação -->
+        <div id="uploadResultados" class="hidden mt-4 space-y-2"></div>
+
+        <!-- Conflitos -->
+        <div id="uploadConflitos" class="hidden mt-4 bg-amber-50 border border-amber-200 rounded-xl p-4">
+          <h4 class="text-sm font-semibold text-amber-700 mb-2">⚠️ Arquivos já existem</h4>
+          <div id="uploadConflitosList" class="space-y-1"></div>
+          <label class="flex items-center gap-2 mt-3 text-sm text-amber-700 cursor-pointer">
+            <input type="checkbox" id="chkSubstituirTodos" class="rounded border-amber-400 text-amber-600" />
+            Substituir todos
+          </label>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="px-6 py-4 border-t flex justify-end gap-3">
+        <button onclick="fecharModalUpload()" class="px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors">Cancelar</button>
+        <button id="btnUploadEnviar" onclick="executarUpload()" disabled class="px-5 py-2 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+          <span id="btnUploadLabel">Validar e Enviar</span>
+          <svg id="btnUploadSpinner" class="hidden spinner w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
+        </button>
+        <button id="btnUploadConfirmar" onclick="confirmarUpload()" class="hidden px-5 py-2 rounded-xl bg-green-600 text-white font-semibold hover:bg-green-700 transition-colors flex items-center gap-2">Confirmar Upload</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== MODAL DOWNLOAD ====== -->
+  <div id="modalDownload" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col">
+      <div class="px-6 py-4 border-b flex items-center justify-between">
+        <h3 class="text-lg font-bold text-gray-800">Baixar Arquivos</h3>
+        <button onclick="fecharModalDownload()" class="text-gray-400 hover:text-gray-600"><svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
+      </div>
+      <div class="px-6 pt-4 flex items-center gap-3">
+        <label class="text-sm font-medium text-gray-600">Mês:</label>
+        <select id="dlMes" onchange="carregarArquivosMes()" class="text-sm border border-gray-300 rounded-lg px-3 py-1.5 focus:ring-brand-500 focus:border-brand-500"></select>
+        <span id="dlStatus" class="text-xs text-gray-400 ml-auto"></span>
+      </div>
+      <div class="px-6 py-4 flex-1 overflow-y-auto" id="dlBody">
+        <div class="text-center text-gray-400 text-sm py-8">Selecione um mês para listar os arquivos.</div>
+      </div>
+      <div class="px-6 py-3 border-t flex justify-end">
+        <button onclick="fecharModalDownload()" class="px-4 py-2 rounded-xl border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== FOOTER ====== -->
+  <footer class="text-center text-xs text-gray-400 py-4 border-t">
+    FR Frotas — Conciliação de Despesas &copy; Ruhan Vilanova
+  </footer>
+
+
+  <!-- ===================================================================== -->
+  <!--  JAVASCRIPT                                                           -->
+  <!-- ===================================================================== -->
+  <script>
+    const API_BASE = '';
+
+    // === Download via fetch (evita proxy do Databricks App retornar HTML) ===
+    async function baixarArquivo(caminhoEncoded) {
+      try {
+        const caminho = decodeURIComponent(caminhoEncoded);
+        const nome = caminho.split(/[\\/]/).pop();
+        const r = await fetch(`${API_BASE}/api/download?path=${encodeURIComponent(caminho)}`);
+        if (!r.ok) throw new Error(`Erro ${r.status}`);
+        const blob = await r.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = nome;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (e) {
+        console.error('Erro ao baixar:', e);
+        alert('Erro ao baixar arquivo: ' + e.message);
+      }
+    }
+
+    // === DOM refs ===
+    const btnStart        = document.getElementById('btnStart');
+    const btnLabel        = document.getElementById('btnLabel');
+    const btnSpinner      = document.getElementById('btnSpinner');
+    const statusBadge     = document.getElementById('statusBadge');
+    const statusDot       = document.getElementById('statusDot');
+    const statusText      = document.getElementById('statusText');
+    const progressWrap    = document.getElementById('progressWrapper');
+    const progressBar     = document.getElementById('progressBar');
+    const progressLabel   = document.getElementById('progressLabel');
+    const secResultados   = document.getElementById('resultados');
+    const badgeMes        = document.getElementById('badgeMes');
+    const modalTicket     = document.getElementById('modalTicket');
+    const ticketServicoPendente = document.getElementById('ticketServicoPendente');
+    const ticketContaSelect = document.getElementById('ticketContaSelect');
+    const ticketSalvarBtn = document.getElementById('ticketSalvarBtn');
+    const chkTodos        = document.getElementById('chkTodos');
+    const tabelaFornecedores = document.getElementById('tabelaFornecedores');
+    const floatingBar     = document.getElementById('floatingBar');
+    const floatingCount   = document.getElementById('floatingCount');
+    const countSelecionados = document.getElementById('countSelecionados');
+    const btnCriarOC      = document.getElementById('btnCriarOC');
+    const btnOCLabel      = document.getElementById('btnOCLabel');
+    const btnOCSpinner    = document.getElementById('btnOCSpinner');
+
+    let ticketPendencias = [];
+    let ticketContasDisponiveis = [];
+    let fornecedoresLista = [];
+    let fornecedoresEmProcessamento = new Set();
+    let ultimaListaExecutada = [];
+    let _executando = false;
+    let mesesDisponiveis = [];
+    let indiceMesAtual = -1;
+    const dropdownMes = document.getElementById('dropdownMes');
+    const btnMes = document.getElementById('btnMes');
+
+    // === Helpers de UI ===
+    function setStatus(estado, texto) {
+      const estilos = {
+        idle:    { dot: 'bg-gray-400',  badge: 'bg-gray-100 text-gray-500' },
+        loading: { dot: 'bg-blue-400',  badge: 'bg-blue-50 text-blue-600' },
+        success: { dot: 'bg-green-500', badge: 'bg-green-50 text-green-700' },
+        error:   { dot: 'bg-red-500',   badge: 'bg-red-50 text-red-700' },
+      };
+      const e = estilos[estado] || estilos.idle;
+      statusDot.className  = `w-2.5 h-2.5 rounded-full ${e.dot}`;
+      statusBadge.className = `flex items-center gap-2 text-sm font-medium px-4 py-1.5 rounded-full ${e.badge}`;
+      statusText.textContent = texto;
+    }
+
+    function setProgresso(pct, label) {
+      progressWrap.classList.remove('hidden');
+      progressBar.style.width = `${pct}%`;
+      progressLabel.textContent = label;
+    }
+
+    function setGlobalLoading(ativo) {
+      _executando = ativo;
+      btnStart.disabled = ativo;
+      btnSpinner.classList.toggle('hidden', !ativo);
+      btnLabel.textContent = ativo ? 'Processando…' : 'Executar Todos';
+      document.querySelectorAll('.btn-executar-um').forEach(btn => btn.disabled = ativo);
+      if (btnCriarOC) btnCriarOC.disabled = ativo;
+    }
+
+    // === Data Grid: fornecedores ===
+    function getSelecionados() {
+      return [...document.querySelectorAll('.chk-fornecedor:checked')].map(c => c.value);
+    }
+
+    function atualizarFloatingBar() {
+      const sel = getSelecionados();
+      if (sel.length > 0) {
+        floatingBar.classList.remove('hidden');
+        floatingCount.textContent = `${sel.length} fornecedor${sel.length > 1 ? 'es' : ''} selecionado${sel.length > 1 ? 's' : ''}`;
+        countSelecionados.textContent = `${sel.length} de ${fornecedoresLista.length} selecionados`;
+      } else {
+        floatingBar.classList.add('hidden');
+        countSelecionados.textContent = '';
+      }
+    }
+
+    function limparSelecao() {
+      document.querySelectorAll('.chk-fornecedor').forEach(c => c.checked = false);
+      document.querySelectorAll('.chk-grupo').forEach(c => { c.checked = false; c.indeterminate = false; });
+      chkTodos.checked = false;
+      atualizarFloatingBar();
+    }
+
+    function setStatusLinha(nome, status) {
+      const el = document.getElementById(`status-${nome}`);
+      if (!el) return;
+      const map = {
+        idle:    { text: '—',           cls: 'text-gray-300' },
+        loading: { text: 'Processando…', cls: 'text-blue-500' },
+        success: { text: 'Concluído',     cls: 'text-green-600 font-semibold' },
+        error:   { text: 'Erro',          cls: 'text-red-600 font-semibold' },
+      };
+      const s = map[status] || map.idle;
+      el.textContent = s.text;
+      el.className = `text-xs ${s.cls}`;
+    }
+
+    // === Helpers de agrupamento ===
+    function nomeExibicao(nome) { return nome.replace(/_/g, ' '); }
+    function sufixoGrupo(nome, prefixo) { return nome.slice(prefixo.length + 1).replace(/_/g, ' '); }
+
+    function agruparFornecedores(nomes) {
+      const map = {};
+      nomes.forEach(n => { const p = n.split('_')[0]; (map[p] = map[p] || []).push(n); });
+      return Object.keys(map).sort().map(p => ({ prefixo: p, membros: map[p] }));
+    }
+
+    function toggleGrupo(prefixo) {
+      const ct = document.getElementById(`grupo-${prefixo}`);
+      const ch = document.getElementById(`chevron-${prefixo}`);
+      const hide = ct.classList.toggle('hidden');
+      ch.style.transform = hide ? '' : 'rotate(90deg)';
+    }
+
+    function atualizarGrupoCheckbox(prefixo) {
+      const filhos = document.querySelectorAll(`.chk-filho-${prefixo}`);
+      const chk = document.querySelector(`.chk-grupo[data-grupo="${prefixo}"]`);
+      if (!chk || !filhos.length) return;
+      const m = [...filhos].filter(c => c.checked).length;
+      chk.checked = m === filhos.length;
+      chk.indeterminate = m > 0 && m < filhos.length;
+    }
+
+    function atualizarTodosCheckbox() {
+      const total = document.querySelectorAll('.chk-fornecedor').length;
+      const marcados = document.querySelectorAll('.chk-fornecedor:checked').length;
+      chkTodos.checked = marcados === total;
+      chkTodos.indeterminate = marcados > 0 && marcados < total;
+      atualizarFloatingBar();
+    }
+
+    const _svgPlay = '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z"/></svg>';
+    const _btnCls = 'btn-executar-um ml-4 flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:text-brand-700 bg-brand-50 hover:bg-brand-100 px-3 py-1.5 rounded-lg transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 disabled:opacity-30 disabled:cursor-not-allowed';
+
+    function renderTabelaFornecedores(nomes) {
+      fornecedoresLista = nomes;
+      if (nomes.length === 0) {
+        tabelaFornecedores.innerHTML = '<div class="px-6 py-12 text-center text-gray-400 text-sm">Nenhum fornecedor registrado.</div>';
+        return;
+      }
+      const grupos = agruparFornecedores(nomes);
+      let html = '';
+
+      grupos.forEach(({ prefixo, membros }) => {
+        if (membros.length === 1) {
+          const nome = membros[0], label = nomeExibicao(nome);
+          html += `<div class="flex items-center px-6 py-3 hover:bg-gray-50/80 transition-colors group">
+            <input type="checkbox" class="chk-fornecedor w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 cursor-pointer" value="${nome}"/>
+            <span class="ml-4 font-medium text-gray-800 text-sm flex-1">${label}</span>
+            <span id="status-${nome}" class="text-xs text-gray-300 w-28 text-right">—</span>
+            <button onclick="executarFornecedores(['${nome}'])" class="${_btnCls}">${_svgPlay} Executar</button>
+          </div>`;
+        } else {
+          const listaJson = JSON.stringify(membros);
+          html += `<div class="flex items-center px-6 py-3 hover:bg-gray-50/80 transition-colors group">
+            <input type="checkbox" class="chk-grupo w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 cursor-pointer" data-grupo="${prefixo}"/>
+            <button onclick="toggleGrupo('${prefixo}')" class="ml-2 p-0.5 rounded hover:bg-gray-200 transition-colors" title="Expandir">
+              <svg id="chevron-${prefixo}" class="w-4 h-4 text-gray-400 transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
+            </button>
+            <span class="ml-2 font-semibold text-gray-800 text-sm flex-1">${prefixo}<span class="ml-1.5 text-xs font-normal text-gray-400">${membros.length}</span></span>
+            <button onclick='executarFornecedores(${listaJson})' class="${_btnCls}">${_svgPlay} Executar</button>
+          </div>`;
+          html += `<div id="grupo-${prefixo}" class="hidden">`;
+          membros.forEach(nome => {
+            const sufixo = sufixoGrupo(nome, prefixo);
+            html += `<div class="flex items-center px-6 pl-16 py-2.5 hover:bg-gray-50/80 transition-colors group border-l-2 border-brand-100 ml-8">
+              <input type="checkbox" class="chk-fornecedor chk-filho-${prefixo} w-4 h-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 cursor-pointer" value="${nome}"/>
+              <span class="ml-4 font-medium text-gray-600 text-sm flex-1">${sufixo}</span>
+              <span id="status-${nome}" class="text-xs text-gray-300 w-28 text-right">—</span>
+              <button onclick="executarFornecedores(['${nome}'])" class="${_btnCls}">${_svgPlay} Executar</button>
+            </div>`;
+          });
+          html += '</div>';
+        }
+      });
+
+      tabelaFornecedores.innerHTML = html;
+
+      // Bind child checkboxes
+      document.querySelectorAll('.chk-fornecedor').forEach(c => {
+        c.addEventListener('change', () => {
+          const filhoClass = [...c.classList].find(cl => cl.startsWith('chk-filho-'));
+          if (filhoClass) atualizarGrupoCheckbox(filhoClass.replace('chk-filho-', ''));
+          atualizarTodosCheckbox();
+        });
+      });
+
+      // Bind group checkboxes
+      document.querySelectorAll('.chk-grupo').forEach(c => {
+        c.addEventListener('change', () => {
+          const prefixo = c.dataset.grupo;
+          document.querySelectorAll(`.chk-filho-${prefixo}`).forEach(f => f.checked = c.checked);
+          c.indeterminate = false;
+          atualizarTodosCheckbox();
+        });
+      });
+    }
+
+    chkTodos.addEventListener('change', () => {
+      const checked = chkTodos.checked;
+      document.querySelectorAll('.chk-fornecedor').forEach(c => c.checked = checked);
+      document.querySelectorAll('.chk-grupo').forEach(c => { c.checked = checked; c.indeterminate = false; });
+      chkTodos.indeterminate = false;
+      atualizarFloatingBar();
+    });
+
+    function executarSelecionados() {
+      const sel = getSelecionados();
+      if (sel.length > 0) executarFornecedores(sel);
+    }
+
+    function criarOCSelecionados() {
+      const sel = getSelecionados();
+      if (sel.length > 0) criarOC(sel);
+    }
+
+    // === Criar OC (bloco de rateio por conta/FLEX) ===
+    async function criarOC(lista) {
+      if (_executando) return;
+      const executandoTodos = lista.length === 0;
+      const nomes = executandoTodos ? fornecedoresLista : lista;
+
+      _executando = true;
+      btnStart.disabled = true;
+      btnCriarOC.disabled = true;
+      btnOCSpinner.classList.remove('hidden');
+      btnOCLabel.textContent = 'Gerando OC…';
+      document.querySelectorAll('.btn-executar-um').forEach(btn => btn.disabled = true);
+
+      const label = executandoTodos ? 'todos os fornecedores' : (nomes.length === 1 ? nomes[0].replace(/_/g,' ') : `${nomes.length} fornecedores`);
+      setStatus('loading', `Gerando OC para ${label}…`);
+      setProgresso(10, 'Criando bloco OC…');
+      secResultados.classList.add('hidden');
+      nomes.forEach(n => setStatusLinha(n, 'loading'));
+
+      try {
+        const body = executandoTodos ? {} : { fornecedores: lista };
+        const response = await fetch(`${API_BASE}/api/criar-oc`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        if (!response.ok) throw new Error(`Erro ${response.status}: ${await response.text()}`);
+
+        const data = await response.json();
+        setProgresso(100, 'OC gerada!');
+
+        const fornecedoresComSucesso = new Set((data.resultados || []).map(r => r.fornecedor));
+        const fornecedoresComErro = new Set((data.erros || []).map(e => e.fornecedor));
+        nomes.forEach(n => {
+          if (fornecedoresComErro.has(n)) setStatusLinha(n, 'error');
+          else if (fornecedoresComSucesso.has(n)) setStatusLinha(n, 'success');
+          else setStatusLinha(n, 'idle');
+        });
+
+        const temErros = (data.erros || []).length > 0;
+        setStatus(temErros ? 'error' : 'success',
+          temErros ? `OC gerada com ${data.erros.length} erro(s)` : 'OC gerada com sucesso');
+
+        // Mostrar resultados
+        const resultados = data.resultados || [];
+        const erros = data.erros || [];
+        document.getElementById('totalFornecedores').textContent = new Set(resultados.map(r => r.fornecedor)).size;
+        document.getElementById('totalArquivos').textContent = resultados.length;
+        document.getElementById('totalAlertas').textContent = erros.length;
+
+        const divArquivos = document.getElementById('listaArquivos');
+        if (resultados.length === 0) {
+          divArquivos.innerHTML = '<p class="text-gray-400 italic">Nenhum arquivo atualizado.</p>';
+        } else {
+          let html = '<ul class="space-y-1">';
+          resultados.forEach(r => {
+            html += `<li class="flex items-center gap-2">
+              <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+              <span class="font-medium text-gray-700">${r.fornecedor.replace(/_/g,' ')}</span>
+              <span class="text-gray-400">→</span>
+              <span class="text-gray-600">OC gerada em ${r.arquivo}</span>
+            </li>`;
+          });
+          html += '</ul>';
+          divArquivos.innerHTML = html;
+        }
+
+        document.getElementById('tabelaPlacas').innerHTML = '';
+        document.getElementById('countPlacas').textContent = '0';
+        document.getElementById('tabelaTipos').innerHTML = '';
+        document.getElementById('countTipos').textContent = '0';
+
+        const secErros = document.getElementById('secaoErros');
+        const divErros = document.getElementById('listaErros');
+        if (erros.length > 0) {
+          secErros.classList.remove('hidden');
+          divErros.innerHTML = '<ul class="space-y-1">' + erros.map(e => `<li><strong>${e.fornecedor}:</strong> ${e.mensagem}</li>`).join('') + '</ul>';
+        } else {
+          secErros.classList.add('hidden');
+        }
+
+        secResultados.classList.remove('hidden');
+        setTimeout(() => secResultados.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+
+      } catch (erro) {
+        console.error(erro);
+        setProgresso(100, 'Falha');
+        progressBar.classList.replace('bg-brand-500', 'bg-red-500');
+        setStatus('error', 'Erro ao criar OC');
+        nomes.forEach(n => setStatusLinha(n, 'error'));
+      } finally {
+        _executando = false;
+        btnStart.disabled = false;
+        btnCriarOC.disabled = false;
+        btnOCSpinner.classList.add('hidden');
+        btnOCLabel.textContent = 'Criar OC';
+        document.querySelectorAll('.btn-executar-um').forEach(btn => btn.disabled = false);
+        setTimeout(() => progressBar.classList.replace('bg-red-500', 'bg-brand-500'), 3000);
+      }
+    }
+
+    // === Carregar lista do backend ===
+    async function carregarFornecedores() {
+      try {
+        const r = await fetch(`${API_BASE}/api/fornecedores`);
+        if (!r.ok) {
+          const txt = await r.text();
+          throw new Error(`HTTP ${r.status}: ${txt.slice(0, 300)}`);
+        }
+        const data = await r.json();
+        if (data.mes_atual) badgeMes.textContent = `📅 ${data.mes_atual}`;
+        if (data.meses) mesesDisponiveis = data.meses;
+        if (data.indice_mes !== undefined) indiceMesAtual = data.indice_mes;
+        if (data.pastas_fornecedores) pastasF = data.pastas_fornecedores;
+        renderDropdownMes();
+        renderTabelaFornecedores(data.fornecedores || []);
+      } catch (e) {
+        console.error('Erro ao carregar fornecedores:', e);
+        tabelaFornecedores.innerHTML = `
+          <div class="px-6 py-8 text-center">
+            <p class="text-red-500 text-sm font-semibold">Erro ao carregar fornecedores</p>
+            <p class="text-red-400 text-xs mt-1">${e.message}</p>
+            <button onclick="carregarFornecedores()" class="mt-3 text-xs text-brand-600 hover:text-brand-700 underline underline-offset-2">Tentar novamente</button>
+          </div>`;
+      }
+    }
+
+    // === Renderização de resultados ===
+    function renderResultados(data) {
+      const resultados = data.resultados || [];
+      const erros = data.erros || [];
+      let arquivosTotais = 0, placasTotais = [], tiposTotais = [];
+
+      resultados.forEach(r => {
+        arquivosTotais += r.arquivos_gerados.length;
+        placasTotais.push(...(r.placas_sem_designacao || []));
+        tiposTotais.push(...(r.tipos_nao_mapeados || []));
+      });
+
+      document.getElementById('totalFornecedores').textContent = resultados.length;
+      document.getElementById('totalArquivos').textContent = arquivosTotais;
+      document.getElementById('totalAlertas').textContent = placasTotais.length + tiposTotais.length;
+
+      const divArquivos = document.getElementById('listaArquivos');
+      if (arquivosTotais === 0) {
+        divArquivos.innerHTML = '<p class="text-gray-400 italic">Nenhum arquivo gerado.</p>';
+      } else {
+        let html = '<ul class="space-y-1">';
+        resultados.forEach(r => {
+          r.arquivos_gerados.forEach(arq => {
+            const nomeArq = arq.split(/[\\/]/).pop();
+            html += `<li class="flex items-center gap-2">
+              <svg class="w-4 h-4 text-green-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+              <span class="font-medium text-gray-700">${r.fornecedor}</span>
+              <span class="text-gray-400">→</span>
+              <span class="text-gray-600 truncate" title="${arq}">${nomeArq}</span>
+              <button onclick="baixarArquivo('${encodeURIComponent(arq)}')" class="ml-auto text-xs bg-brand-500 hover:bg-brand-600 text-white px-2 py-0.5 rounded transition-colors cursor-pointer">↓ Baixar</button>
+            </li>`;
+          });
+        });
+        html += '</ul>';
+        divArquivos.innerHTML = html;
+      }
+
+      const divPlacas = document.getElementById('tabelaPlacas');
+      document.getElementById('countPlacas').textContent = placasTotais.length;
+      if (placasTotais.length === 0) {
+        divPlacas.innerHTML = '<p class="text-gray-400 italic">Nenhuma placa sem designação.</p>';
+      } else {
+        let html = '<table class="w-full text-left border-collapse"><thead><tr class="border-b text-xs text-gray-400 uppercase"><th class="py-2 pr-4">#</th><th class="py-2 pr-4">Placa</th><th class="py-2">Fornecedor</th></tr></thead><tbody>';
+        placasTotais.forEach((p, i) => { html += `<tr class="border-b last:border-0 hover:bg-gray-50"><td class="py-1.5 pr-4 text-gray-400">${i+1}</td><td class="py-1.5 pr-4 font-mono font-semibold text-gray-800">${p.placa}</td><td class="py-1.5 text-gray-600">${p.fornecedor}</td></tr>`; });
+        html += '</tbody></table>';
+        divPlacas.innerHTML = html;
+      }
+
+      const divTipos = document.getElementById('tabelaTipos');
+      document.getElementById('countTipos').textContent = tiposTotais.length;
+      if (tiposTotais.length === 0) {
+        divTipos.innerHTML = '<p class="text-gray-400 italic">Todos os tipos estão mapeados.</p>';
+      } else {
+        let html = '<table class="w-full text-left border-collapse"><thead><tr class="border-b text-xs text-gray-400 uppercase"><th class="py-2 pr-4">#</th><th class="py-2 pr-4">Tipo de Transação</th><th class="py-2 pr-4">Placa</th><th class="py-2">Fornecedor</th></tr></thead><tbody>';
+        tiposTotais.forEach((t, i) => { html += `<tr class="border-b last:border-0 hover:bg-gray-50"><td class="py-1.5 pr-4 text-gray-400">${i+1}</td><td class="py-1.5 pr-4 font-medium text-gray-800">${t.tipo_transacao}</td><td class="py-1.5 pr-4 font-mono text-gray-600">${t.placa}</td><td class="py-1.5 text-gray-600">${t.fornecedor}</td></tr>`; });
+        html += '</tbody></table>';
+        divTipos.innerHTML = html;
+      }
+
+      const secErros = document.getElementById('secaoErros');
+      const divErros = document.getElementById('listaErros');
+      if (erros.length > 0) {
+        secErros.classList.remove('hidden');
+        divErros.innerHTML = '<ul class="space-y-1">' + erros.map(e => `<li><strong>${e.fornecedor}:</strong> ${e.mensagem}</li>`).join('') + '</ul>';
+      } else {
+        secErros.classList.add('hidden');
+      }
+
+      secResultados.classList.remove('hidden');
+      setTimeout(() => secResultados.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+    }
+
+    // === Mapeamento TICKET (inalterado) ===
+    function abrirModalTicket(pendencias, contas) {
+      ticketPendencias = [...(pendencias || [])];
+      ticketContasDisponiveis = [...(contas || [])];
+      atualizarModalTicket();
+      modalTicket.classList.remove('hidden');
+    }
+    function fecharModalTicket() {
+      modalTicket.classList.add('hidden');
+      if (ticketPendencias.length > 0) setStatus('idle', 'Aguardando escolha da conta do Ticket');
+    }
+    function preencherSelectContasTicket() {
+      ticketContaSelect.innerHTML = '<option value="" selected disabled>Selecione uma conta...</option>';
+      ticketContasDisponiveis.forEach(conta => {
+        const o = document.createElement('option'); o.value = conta.id; o.textContent = conta.label;
+        ticketContaSelect.appendChild(o);
+      });
+    }
+    function atualizarModalTicket() {
+      const p = ticketPendencias[0]; preencherSelectContasTicket();
+      if (!p) { fecharModalTicket(); return; }
+      ticketServicoPendente.textContent = p.servico_exibicao;
+      setStatus('loading', 'Aguardando conta para serviço do Ticket…');
+      setProgresso(15, 'Selecione a conta do serviço pendente do Ticket…');
+    }
+    async function salvarContaTicketAtual() {
+      const p = ticketPendencias[0], contaId = ticketContaSelect.value;
+      if (!p || !contaId) return;
+      ticketSalvarBtn.disabled = true;
+      try {
+        const r = await fetch(`${API_BASE}/api/ticket/mapear-servico`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ servico: p.servico, conta_id: Number(contaId) }) });
+        if (!r.ok) throw new Error(await r.text());
+        const data = await r.json();
+        ticketPendencias = [...(data.pendencias_ticket || [])];
+        ticketContasDisponiveis = [...(data.contas_disponiveis || ticketContasDisponiveis)];
+        if (ticketPendencias.length > 0) { atualizarModalTicket(); return; }
+        fecharModalTicket();
+        setStatus('loading', 'Mapeamento salvo. Retomando…');
+        setProgresso(20, 'Retomando conciliação após salvar a conta do Ticket…');
+        await executarFornecedores(ultimaListaExecutada);
+      } catch (e) {
+        console.error(e); setStatus('error', 'Erro ao salvar conta'); alert(e.message);
+      } finally { ticketSalvarBtn.disabled = false; }
+    }
+
+    // === Função principal: executar fornecedores ===
+    async function executarFornecedores(lista) {
+      if (_executando) return;
+      ultimaListaExecutada = lista;
+      const executandoTodos = lista.length === 0;
+      const nomes = executandoTodos ? fornecedoresLista : lista;
+
+      setGlobalLoading(true);
+      const label = executandoTodos ? 'todos os fornecedores' : (nomes.length === 1 ? nomes[0] : `${nomes.length} fornecedores`);
+      setStatus('loading', `Processando ${label}…`);
+      setProgresso(10, `Iniciando ${label}…`);
+      secResultados.classList.add('hidden');
+
+      nomes.forEach(n => setStatusLinha(n, 'loading'));
+
+      try {
+        const progressoInterval = simularProgresso(nomes);
+        const body = executandoTodos ? {} : { fornecedores: lista };
+        const response = await fetch(`${API_BASE}/api/executar`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        clearInterval(progressoInterval);
+
+        if (response.status === 409) {
+          const data = await response.json();
+          if (data.mes_atual) badgeMes.textContent = `📅 ${data.mes_atual}`;
+          nomes.forEach(n => setStatusLinha(n, 'idle'));
+          abrirModalTicket(data.pendencias_ticket || [], data.contas_disponiveis || []);
+          return;
+        }
+
+        if (!response.ok) throw new Error(`Erro ${response.status}: ${await response.text()}`);
+
+        const data = await response.json();
+        if (data.mes_atual) badgeMes.textContent = `📅 ${data.mes_atual}`;
+        setProgresso(100, 'Concluído!');
+
+        const fornecedoresComSucesso = new Set((data.resultados || []).map(r => r.fornecedor));
+        const fornecedoresComErro = new Set((data.erros || []).map(e => e.fornecedor));
+        nomes.forEach(n => {
+          if (fornecedoresComErro.has(n)) setStatusLinha(n, 'error');
+          else if (fornecedoresComSucesso.has(n)) setStatusLinha(n, 'success');
+          else setStatusLinha(n, 'idle');
+        });
+
+        const temErros = (data.erros || []).length > 0;
+        setStatus(temErros ? 'error' : 'success', temErros ? `Concluído com ${data.erros.length} erro(s)` : 'Concluído com sucesso');
+        renderResultados(data);
+      } catch (erro) {
+        console.error(erro);
+        setProgresso(100, 'Falha');
+        progressBar.classList.replace('bg-brand-500', 'bg-red-500');
+        setStatus('error', 'Erro na execução');
+        nomes.forEach(n => setStatusLinha(n, 'error'));
+        secResultados.classList.remove('hidden');
+        document.getElementById('secaoErros').classList.remove('hidden');
+        document.getElementById('listaErros').innerHTML = `<div class="bg-red-50 border border-red-200 rounded-lg p-4"><p class="font-semibold">Não foi possível concluir:</p><p class="mt-1 text-red-500">${erro.message}</p></div>`;
+        document.getElementById('totalFornecedores').textContent = '—';
+        document.getElementById('totalArquivos').textContent = '—';
+        document.getElementById('totalAlertas').textContent = '—';
+        setTimeout(() => secResultados.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+      } finally {
+        setGlobalLoading(false);
+        setTimeout(() => progressBar.classList.replace('bg-red-500', 'bg-brand-500'), 3000);
+      }
+    }
+
+    // === Progresso simulado ===
+    function simularProgresso(nomes) {
+      let pct = 10, idx = 0;
+      const labels = nomes && nomes.length > 0 ? nomes : fornecedoresLista;
+      return setInterval(() => {
+        pct += (90 - pct) * 0.06;
+        pct = Math.min(pct, 90);
+        setProgresso(pct, `Processando ${labels[idx % labels.length]}…`);
+        idx++;
+      }, 800);
+    }
+
+    // === Dropdown de mês ===
+    function renderDropdownMes() {
+      if (!mesesDisponiveis.length) return;
+      dropdownMes.innerHTML = mesesDisponiveis.map(m =>
+        `<button onclick="selecionarMes(${m.indice})" class="w-full text-left px-4 py-2 text-sm hover:bg-brand-50 transition-colors ${
+          m.indice === indiceMesAtual ? 'bg-brand-50 text-brand-700 font-semibold' : 'text-gray-700'
+        }">${m.nome}</button>`
+      ).join('');
+    }
+
+    function toggleDropdownMes() {
+      dropdownMes.classList.toggle('hidden');
+    }
+
+    document.addEventListener('click', (e) => {
+      if (!btnMes.contains(e.target) && !dropdownMes.contains(e.target)) {
+        dropdownMes.classList.add('hidden');
+      }
+    });
+
+    async function selecionarMes(indice) {
+      dropdownMes.classList.add('hidden');
+      if (indice === indiceMesAtual) return;
+      badgeMes.textContent = '⏳ Alterando…';
+      try {
+        const r = await fetch(`${API_BASE}/api/alterar-mes`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ indice }),
+        });
+        if (!r.ok) throw new Error(await r.text());
+        const data = await r.json();
+        indiceMesAtual = data.indice_mes;
+        badgeMes.textContent = `📅 ${data.mes_atual}`;
+        renderDropdownMes();
+        setStatus('idle', 'Mês alterado para ' + data.mes_atual);
+        secResultados.classList.add('hidden');
+        await carregarFornecedores();
+      } catch (e) {
+        console.error(e);
+        setStatus('error', 'Erro ao alterar mês');
+        badgeMes.textContent = `📅 ${mesesDisponiveis[indiceMesAtual]?.nome || '?'}`;
+      }
+    }
+
+    // =================================================================
+    //  DOWNLOAD DE ARQUIVOS
+    // =================================================================
+    const modalDownload = document.getElementById('modalDownload');
+    const dlMes = document.getElementById('dlMes');
+    const dlBody = document.getElementById('dlBody');
+    const dlStatus = document.getElementById('dlStatus');
+
+    function abrirModalDownload() {
+      const meses = mesesDisponiveis.length ? mesesDisponiveis : _MESES_FALLBACK;
+      const mesAtual = indiceMesAtual >= 0 ? indiceMesAtual : Math.max(0, new Date().getMonth() - 1);
+      dlMes.innerHTML = meses.map(m =>
+        `<option value="${m.indice}" ${m.indice === mesAtual ? 'selected' : ''}>${m.nome}</option>`
+      ).join('');
+      modalDownload.classList.remove('hidden');
+      carregarArquivosMes();
+    }
+
+    function fecharModalDownload() { modalDownload.classList.add('hidden'); }
+
+    async function carregarArquivosMes() {
+      const mes = dlMes.value;
+      dlBody.innerHTML = '<div class="text-center text-gray-400 text-sm py-8">Carregando…</div>';
+      dlStatus.textContent = '';
+      try {
+        const r = await fetch(`${API_BASE}/api/arquivos?mes=${mes}`);
+        if (!r.ok) throw new Error(await r.text());
+        const data = await r.json();
+        const arquivos = data.arquivos || [];
+        if (!arquivos.length) {
+          dlBody.innerHTML = '<div class="text-center text-gray-400 text-sm py-8">Nenhum arquivo encontrado neste mês.</div>';
+          return;
+        }
+        dlStatus.textContent = `${arquivos.length} arquivo(s)`;
+        const grupos = {};
+        arquivos.forEach(a => { const p = a.pasta || '(raiz do mês)'; (grupos[p] = grupos[p] || []).push(a); });
+        const chaves = Object.keys(grupos).sort();
+        let html = '';
+        chaves.forEach((pasta, idx) => {
+          const files = grupos[pasta];
+          html += `<details class="border border-gray-200 rounded-lg mb-2" ${idx === 0 ? 'open' : ''}>
+            <summary class="px-4 py-2.5 cursor-pointer bg-gray-50 hover:bg-gray-100 rounded-t-lg flex items-center gap-2 text-sm font-medium text-gray-700">
+              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z"/></svg>
+              ${pasta} <span class="text-xs text-gray-400 font-normal ml-auto">${files.length}</span>
+            </summary><div class="divide-y divide-gray-100">`;
+          files.forEach(a => {
+            const icon = a.nome.endsWith('.xlsx') ? '📊' : a.nome.endsWith('.pdf') ? '📄' : '📁';
+            const kb = (a.tamanho / 1024).toFixed(0);
+            html += `<div class="flex items-center px-4 py-2 hover:bg-gray-50 group">
+              <span class="mr-2">${icon}</span>
+              <span class="text-sm text-gray-700 flex-1 truncate" title="${a.nome}">${a.nome}</span>
+              <span class="text-xs text-gray-400 mr-3">${kb} KB</span>
+              <button onclick="baixarArquivo('${encodeURIComponent(a.caminho)}')" class="text-xs font-semibold text-brand-600 hover:text-brand-700 bg-brand-50 hover:bg-brand-100 px-3 py-1 rounded-lg transition-colors opacity-0 group-hover:opacity-100 cursor-pointer">Baixar</button>
+            </div>`;
+          });
+          html += '</div></details>';
+        });
+        dlBody.innerHTML = html;
+      } catch (e) {
+        dlBody.innerHTML = `<div class="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">${e.message}</div>`;
+      }
+    }
+
+    // =================================================================
+    //  UPLOAD DE ARQUIVOS
+    // =================================================================
+    const modalUpload = document.getElementById('modalUpload');
+    const uploadInput = document.getElementById('uploadInput');
+    const uploadMes = document.getElementById('uploadMes');
+    const uploadPreview = document.getElementById('uploadPreview');
+    const uploadFileList = document.getElementById('uploadFileList');
+    const uploadFileCount = document.getElementById('uploadFileCount');
+    const uploadResultados = document.getElementById('uploadResultados');
+    const uploadConflitos = document.getElementById('uploadConflitos');
+    const uploadConflitosList = document.getElementById('uploadConflitosList');
+    const btnUploadEnviar = document.getElementById('btnUploadEnviar');
+    const btnUploadConfirmar = document.getElementById('btnUploadConfirmar');
+    const btnUploadLabel = document.getElementById('btnUploadLabel');
+    const btnUploadSpinner = document.getElementById('btnUploadSpinner');
+    const chkSubstituirTodos = document.getElementById('chkSubstituirTodos');
+    const uploadDesc = document.getElementById('uploadDesc');
+    const uploadHint = document.getElementById('uploadHint');
+
+    let uploadModoAtual = 'designacao_mensal';
+    let uploadArquivos = [];
+    let uploadSessaoId = null;
+    let uploadResultadosData = [];
+    let pastasF = [];
+
+    const _DESCRICOES = {
+      designacao_mensal: 'Envie o arquivo de Designação de Frota (.xlsx) para o mês selecionado.',
+      designacao_historica: 'Envie o arquivo DESIGNAÇÃO HISTORICA CLOUD.xlsx (pasta AUXILIARES).',
+      pasta: 'Envie a pasta do mês ou pastas individuais de fornecedores. O sistema organiza automaticamente.',
+    };
+    const _HINTS = {
+      designacao_mensal: 'Apenas 1 arquivo .xlsx',
+      designacao_historica: 'Apenas 1 arquivo .xlsx',
+      pasta: 'Selecione uma pasta ou vários arquivos',
+    };
+
+    const _MESES_FALLBACK = [
+      'JANEIRO','FEVEREIRO','MARÇO','ABRIL','MAIO','JUNHO',
+      'JULHO','AGOSTO','SETEMBRO','OUTUBRO','NOVEMBRO','DEZEMBRO'
+    ].map((n,i) => ({indice:i, nome:n}));
+
+    function abrirModalUpload() {
+      const meses = mesesDisponiveis.length ? mesesDisponiveis : _MESES_FALLBACK;
+      const mesAtual = indiceMesAtual >= 0 ? indiceMesAtual : Math.max(0, new Date().getMonth() - 1);
+      uploadMes.innerHTML = meses.map(m =>
+        `<option value="${m.indice}" ${m.indice === mesAtual ? 'selected' : ''}>${m.nome}</option>`
+      ).join('');
+      _resetUploadState();
+      setUploadTab('pasta');
+      modalUpload.classList.remove('hidden');
+    }
+
+    function fecharModalUpload() {
+      modalUpload.classList.add('hidden');
+      _resetUploadState();
+    }
+
+    function _resetUploadState() {
+      uploadArquivos = [];
+      uploadSessaoId = null;
+      uploadResultadosData = [];
+      uploadInput.value = '';
+      uploadInput.removeAttribute('webkitdirectory');
+      uploadPreview.classList.add('hidden');
+      uploadResultados.classList.add('hidden');
+      uploadConflitos.classList.add('hidden');
+      btnUploadEnviar.disabled = true;
+      btnUploadEnviar.classList.remove('hidden');
+      btnUploadConfirmar.classList.add('hidden');
+      btnUploadLabel.textContent = 'Validar e Enviar';
+      btnUploadSpinner.classList.add('hidden');
+      chkSubstituirTodos.checked = false;
+    }
+
+    function setUploadTab(modo) {
+      uploadModoAtual = modo;
+      _resetUploadState();
+      document.querySelectorAll('.upload-tab').forEach(t => {
+        const active = t.dataset.tab === modo;
+        t.className = `upload-tab px-4 py-2 text-sm font-medium rounded-t-lg border-b-2 transition-colors ${
+          active ? 'border-brand-600 text-brand-700 bg-brand-50/50' : 'border-transparent text-gray-500 hover:text-gray-700'
+        }`;
+      });
+      uploadDesc.textContent = _DESCRICOES[modo];
+      uploadHint.textContent = _HINTS[modo];
+      if (modo === 'pasta') {
+        uploadInput.setAttribute('webkitdirectory', '');
+        uploadInput.removeAttribute('accept');
+        uploadInput.multiple = true;
+      } else {
+        uploadInput.removeAttribute('webkitdirectory');
+        uploadInput.setAttribute('accept', '.xlsx');
+        uploadInput.multiple = false;
+      }
+      uploadMes.closest('div').style.display = modo === 'designacao_historica' ? 'none' : '';
+    }
+
+    uploadInput.addEventListener('change', () => {
+      const files = [...uploadInput.files].filter(f => !f.name.startsWith('~$'));
+      if (!files.length) return;
+      uploadArquivos = uploadModoAtual !== 'pasta' ? files.slice(0, 1) : files;
+      _renderPreview();
+    });
+
+    const _dropzone = document.getElementById('uploadDropzone');
+    _dropzone.addEventListener('dragover', e => { e.preventDefault(); _dropzone.classList.add('border-brand-400', 'bg-brand-50/30'); });
+    _dropzone.addEventListener('dragleave', () => _dropzone.classList.remove('border-brand-400', 'bg-brand-50/30'));
+    _dropzone.addEventListener('drop', e => {
+      e.preventDefault();
+      _dropzone.classList.remove('border-brand-400', 'bg-brand-50/30');
+      if (e.dataTransfer.files.length) { uploadInput.files = e.dataTransfer.files; uploadInput.dispatchEvent(new Event('change')); }
+    });
+
+    function _renderPreview() {
+      uploadPreview.classList.remove('hidden');
+      uploadResultados.classList.add('hidden');
+      uploadConflitos.classList.add('hidden');
+      btnUploadEnviar.classList.remove('hidden');
+      btnUploadConfirmar.classList.add('hidden');
+      btnUploadEnviar.disabled = false;
+      uploadFileList.innerHTML = uploadArquivos.map(f => {
+        const icon = f.name.endsWith('.xlsx') ? '📊' : f.name.endsWith('.pdf') ? '📄' : '📁';
+        const rel = f.webkitRelativePath || f.name;
+        return `<div class="flex items-center gap-2 text-sm py-1">
+          <span>${icon}</span>
+          <span class="text-gray-700 flex-1 truncate" title="${rel}">${rel}</span>
+          <span class="text-xs text-gray-400">${(f.size/1024).toFixed(0)} KB</span>
+        </div>`;
+      }).join('');
+      uploadFileCount.textContent = `${uploadArquivos.length} arquivo(s)`;
+    }
+
+    function _readBase64(file) {
+      return new Promise(resolve => {
+        const r = new FileReader();
+        r.onload = () => resolve(r.result.split(',')[1] || '');
+        r.readAsDataURL(file);
+      });
+    }
+
+    async function executarUpload() {
+      btnUploadEnviar.disabled = true;
+      btnUploadLabel.textContent = 'Validando…';
+      btnUploadSpinner.classList.remove('hidden');
+      try {
+        const arquivos = [];
+        for (const f of uploadArquivos) {
+          arquivos.push({ nome: f.name, caminho_relativo: f.webkitRelativePath || f.name, dados: await _readBase64(f) });
+        }
+        const resp = await fetch(`${API_BASE}/api/upload`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ modo: uploadModoAtual, mes: parseInt(uploadMes.value), arquivos }),
+        });
+        if (!resp.ok) throw new Error(`Erro ${resp.status}: ${(await resp.text()).slice(0, 300)}`);
+        const data = await resp.json();
+        if (data.erro) throw new Error(data.erro);
+        uploadSessaoId = data.sessao;
+        uploadResultadosData = data.resultados || [];
+        _renderResultados();
+      } catch (e) {
+        uploadResultados.classList.remove('hidden');
+        uploadResultados.innerHTML = `<div class="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">${e.message}</div>`;
+      } finally {
+        btnUploadSpinner.classList.add('hidden');
+        btnUploadLabel.textContent = 'Validar e Enviar';
+      }
+    }
+
+    function _renderResultados() {
+      uploadResultados.classList.remove('hidden');
+      const res = uploadResultadosData;
+      const validos = res.filter(r => r.valido && !r.conflito && r.destino);
+      const invalidos = res.filter(r => !r.valido);
+      const conflitos = res.filter(r => r.valido && r.conflito);
+      const ignorados = res.filter(r => r.tipo === 'ignorado' || (!r.destino && r.valido));
+      let html = '';
+      if (validos.length) html += `<div class="bg-green-50 border border-green-200 rounded-lg p-3">
+        <p class="text-sm font-semibold text-green-700">✅ ${validos.length} arquivo(s) prontos</p>
+        <ul class="mt-1 text-xs text-green-600 space-y-0.5">${validos.map(r=>`<li>→ ${r.destino_exibicao}</li>`).join('')}</ul></div>`;
+      if (invalidos.length) html += `<div class="bg-red-50 border border-red-200 rounded-lg p-3">
+        <p class="text-sm font-semibold text-red-700">❌ ${invalidos.length} arquivo(s) com erro</p>
+        <ul class="mt-1 text-xs text-red-600 space-y-0.5">${invalidos.map(r=>`<li><strong>${r.nome}</strong>: ${r.erro}</li>`).join('')}</ul></div>`;
+      if (ignorados.length) html += `<div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+        <p class="text-sm text-gray-500">⏭ ${ignorados.length} arquivo(s) ignorados</p></div>`;
+      uploadResultados.innerHTML = html;
+
+      if (conflitos.length) {
+        uploadConflitos.classList.remove('hidden');
+        uploadConflitosList.innerHTML = conflitos.map(r =>
+          `<label class="flex items-center gap-2 text-sm text-amber-700">
+            <input type="checkbox" class="chk-substituir rounded border-amber-400 text-amber-600" value="${r.nome}"/>
+            ${r.nome} <span class="text-xs text-amber-500">(já existe)</span></label>`
+        ).join('');
+        chkSubstituirTodos.onchange = () => document.querySelectorAll('.chk-substituir').forEach(c => c.checked = chkSubstituirTodos.checked);
+      } else uploadConflitos.classList.add('hidden');
+
+      btnUploadEnviar.classList.add('hidden');
+      if (validos.length || conflitos.length) btnUploadConfirmar.classList.remove('hidden');
+    }
+
+    async function confirmarUpload() {
+      btnUploadConfirmar.disabled = true;
+      btnUploadConfirmar.textContent = 'Enviando…';
+      const substituir = [...document.querySelectorAll('.chk-substituir:checked')].map(c => c.value);
+      try {
+        const resp = await fetch(`${API_BASE}/api/upload/confirmar`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessao: uploadSessaoId, substituir }),
+        });
+        if (!resp.ok) throw new Error(`Erro ${resp.status}: ${(await resp.text()).slice(0, 300)}`);
+        const data = await resp.json();
+        if (data.erro) throw new Error(data.erro);
+        let html = '';
+        if (data.sucesso?.length) html += `<div class="bg-green-50 border border-green-200 rounded-lg p-3">
+          <p class="text-sm font-semibold text-green-700">✅ ${data.sucesso.length} arquivo(s) enviados com sucesso!</p></div>`;
+        if (data.erros?.length) html += `<div class="bg-red-50 border border-red-200 rounded-lg p-3">
+          <p class="text-sm font-semibold text-red-700">❌ ${data.erros.length} erro(s):</p>
+          <ul class="mt-1 text-xs text-red-600">${data.erros.map(e=>`<li>${e.nome}: ${e.erro}</li>`).join('')}</ul></div>`;
+        uploadResultados.innerHTML = html;
+        uploadConflitos.classList.add('hidden');
+        btnUploadConfirmar.classList.add('hidden');
+      } catch (e) {
+        uploadResultados.innerHTML = `<div class="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">${e.message}</div>`;
+      } finally {
+        btnUploadConfirmar.disabled = false;
+        btnUploadConfirmar.textContent = 'Confirmar Upload';
+      }
+    }
+
+    // === Inicialização ===
+    (function init() {
+      badgeMes.textContent = '📅 Carregando…';
+      carregarFornecedores();
+    })();
+  </script>
+</body>
+</html>

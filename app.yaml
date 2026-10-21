@@ -1,0 +1,6 @@
+command:
+  - python
+  - server.py
+env:
+  - name: VOLUME_URI
+    valueFrom: volume
